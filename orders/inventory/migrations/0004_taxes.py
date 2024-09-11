@@ -2,42 +2,42 @@
 
 from django.db import migrations
 
-drop_sql = """DROP VIEW IF EXISTS taxed_article"""
+drop_sql = """DROP VIEW IF EXISTS `taxed_article`;"""
 create_sql = """
-    CREATE VIEW taxed_article AS
-        WITH `recent_taxes` AS (
-    SELECT * FROM `sales_categorytax`
-    LEFT JOIN `sales_tax`
-        ON (`sales_tax`.`reference` = `sales_categorytax`.`tax_id`)
-    WHERE (`category_id`, `valid_from`) IN (SELECT `category_id`, MAX(`valid_from`)
-    FROM `sales_categorytax`
-    GROUP BY `category_id`)
-)
-SELECT 
-    `inventory_pricedarticle`.`article_id`
-    , `inventory_pricedarticle`.`price`
-    , `inventory_pricedarticle`.`set_at`
-    , `inventory_inventoryarticle`.`quantity` AS `quantity`
-    , `inventory_article`.`date_created` AS `date_created`
-    , `inventory_article`.`reference` AS `reference`
-    , `inventory_article`.`name` AS `name`
-    , `inventory_article`.`description` AS `description`
-    , `recent_taxes`.`value` AS `tax`
-FROM `inventory_pricedarticle`
-INNER JOIN `inventory_article`
-    ON (`inventory_pricedarticle`.`article_id` = `inventory_article`.`id`)
-LEFT OUTER JOIN `inventory_inventoryarticle`
-    ON (`inventory_pricedarticle`.`article_id` = `inventory_inventoryarticle`.`article_id`)
-LEFT OUTER JOIN `recent_taxes`
-    ON (`inventory_article`.`category_id` = `recent_taxes`.`category_id`)
-WHERE True or (
-        `inventory_pricedarticle`.`article_id`, `inventory_pricedarticle`.`set_at`
-    ) IN ( SELECT
-        `article_id`, max(`set_at`)
-        FROM `inventory_pricedarticle`
-        GROUP BY article_id
-    )
-;
+CREATE OR REPLACE VIEW `taxed_article` AS
+    WITH `recent_taxes` AS (
+        SELECT * FROM `sales_categorytax`
+        LEFT JOIN `sales_tax`
+            ON (`sales_tax`.`reference` = `sales_categorytax`.`tax_id`)
+        WHERE (`category_id`, `valid_from`) IN (
+            SELECT `category_id`, MAX(`valid_from`)
+            FROM `sales_categorytax`
+            GROUP BY `category_id`
+        )
+    ) SELECT
+        `inventory_pricedarticle`.`article_id`
+        , `inventory_pricedarticle`.`price`
+        , `inventory_pricedarticle`.`set_at`
+        , `inventory_inventoryarticle`.`quantity` AS `quantity`
+        , `inventory_article`.`date_created` AS `date_created`
+        , `inventory_article`.`reference` AS `reference`
+        , `inventory_article`.`name` AS `name`
+        , `inventory_article`.`description` AS `description`
+        , `recent_taxes`.`value` AS `tax`
+    FROM `inventory_pricedarticle`
+    INNER JOIN `inventory_article`
+        ON (`inventory_pricedarticle`.`article_id` = `inventory_article`.`id`)
+    LEFT OUTER JOIN `inventory_inventoryarticle`
+        ON (`inventory_pricedarticle`.`article_id` = `inventory_inventoryarticle`.`article_id`)
+    LEFT OUTER JOIN `recent_taxes`
+        ON (`inventory_article`.`category_id` = `recent_taxes`.`category_id`)
+    WHERE (
+            `inventory_pricedarticle`.`article_id`, `inventory_pricedarticle`.`set_at`
+        ) IN (
+            SELECT `article_id`, max(`set_at`)
+            FROM `inventory_pricedarticle`
+            GROUP BY article_id
+        );
 """
 
 class Migration(migrations.Migration):
@@ -49,6 +49,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            create_sql, reverse_sql=drop_sql
-        )
+            create_sql,
+            reverse_sql=drop_sql,
+        ),
     ]

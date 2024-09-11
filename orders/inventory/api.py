@@ -5,7 +5,7 @@ from ninja.errors import HttpError
 from .models import Article, FullArticle
 from .schemas import ArticleSchema, ArticleInput
 
-router = Router()
+router = Router(tags=['Articles'])
 
 
 @router.get("/articles", response=list[ArticleSchema])

@@ -43,7 +43,8 @@ class Article(models.Model):
     def update_with_data(self, data: ArticleInput):
         with transaction.atomic():
             for i in "reference", "name", "description":
-                setattr(self, i, getattr(data, i))
+                # These atts should not be empty, if none was provided fallback to existing value
+                setattr(self, i, getattr(data, i) or getattr(self, i))
             self.save()
             self.update_related(data)
 
