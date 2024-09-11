@@ -1,6 +1,6 @@
-from typing import Optional
 from ninja import Router, Form
 from ninja.errors import HttpError
+from ninja.pagination import paginate, LimitOffsetPagination
 from django.db.utils import IntegrityError
 
 from .models import Article, FullArticle, Category
@@ -10,8 +10,9 @@ router = Router(tags=["Articles"])
 
 
 @router.get("/categories", response=list[str])
-def list_categories(request, offset: int = 0, limit: Optional[int] = None):
-    return Category.objects.values_list(flat=True)[slice(offset, limit)]
+@paginate(LimitOffsetPagination)
+def list_categories(request):
+    return Category.objects.values_list(flat=True)
 
 
 @router.post("/category/create")
@@ -20,12 +21,14 @@ def create_category(request, name: str):
         Category.objects.create(name=name)
         return 201
     except IntegrityError:
-        return 400  # duplicate
+        raise HttpError(400, "Duplicate")
+
 
 
 @router.get("/articles", response=list[ArticleSchema])
-def list_articles(request, offset: int = 0, limit: Optional[int] = None):
-    return FullArticle.objects.all()[slice(offset, limit)]
+@paginate(LimitOffsetPagination)
+def list_articles(request):
+    return FullArticle.objects.all()
 
 
 @router.post("/article/create")

@@ -33,5 +33,5 @@ class ArticleInput(Schema):
     name: EmptyStrToDefault[str] = None
     description: Optional[str] = None
     price: EmptyStrToDefault[float] = None
-    quantity:EmptyStrToDefault[int] = None
+    quantity: EmptyStrToDefault[int] = None
     category: EmptyStrToDefault[str] = None
