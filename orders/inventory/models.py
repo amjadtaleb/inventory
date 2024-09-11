@@ -2,6 +2,16 @@ from django.db import models, transaction
 from .schemas import ArticleInput
 
 
+class Category(models.Model):
+    name = models.SlugField(primary_key=True)
+    "examples: cars, books, basics, services"
+
+
+def set_default_category():
+    cat, created = Category.objects.get_or_create(name="services")
+    return cat
+
+
 class Article(models.Model):
     """Base article model, unaware of prices or inventory status"""
 
@@ -9,11 +19,16 @@ class Article(models.Model):
     reference = models.SlugField(db_index=True, allow_unicode=False, unique=True)
     name = models.SlugField(null=False)
     description = models.TextField()
+    category = models.ForeignKey(Category, on_delete=models.SET_DEFAULT, default=set_default_category)
 
     def __str__(self) -> str:
         return f"Article {self.reference}:{self.name}"
 
     def update_related(self, data: ArticleInput):
+        if data.category is not None:
+            category, created = Category.objects.get_or_create(name=data.category)
+            self.category = category
+            self.save()
         if data.price is not None:
             PricedArticle.objects.create(
                 article=self,

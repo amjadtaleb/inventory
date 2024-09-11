@@ -25,6 +25,7 @@ class ArticleSchema(Schema):
     price: Optional[float]
     date_priced: datetime = Field(..., alias="set_at")
     quantity: Optional[int]
+    category: str
 
 
 class ArticleInput(Schema):
@@ -33,3 +34,4 @@ class ArticleInput(Schema):
     description: Optional[str] = None
     price: EmptyStrToDefault[float] = None
     quantity:EmptyStrToDefault[int] = None
+    category: EmptyStrToDefault[str] = None

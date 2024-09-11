@@ -17,6 +17,7 @@ def list_articles(request, offset: int = 0, limit: Optional[int] = None):
         reference=F("article__reference"),
         name=F("article__name"),
         description=F("article__description"),
+        category=F("article__category__name")
     ).values()[slice(offset, limit)]
 
 
@@ -44,6 +45,7 @@ def get_article(request, id: int):
             reference=F("article__reference"),
             name=F("article__name"),
             description=F("article__description"),
+            category=F("article__category__name")
         )
         .filter(article_id=id)
         .first()
