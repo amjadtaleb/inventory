@@ -59,18 +59,24 @@ def create_order(request, reference: str):
         raise HttpError(400, "Duplicate")
 
 
-@router.post("order/additem/{reference}")
-def update_order(request, reference: str, article_id: int, quantity: int):
+@router.post("order/updateitem/{reference}")
+def update_order(request, reference: str, article_id: int, quantity_change: int):
+    """Add or remove items from an order.
+    
+    **quantity_change** could be positive to add items to the order or negative to remove them
+    """
+    if quantity_change == 0:
+        raise HttpError(400, "Change cannot be zero")
     if order := PurchaceOrder.objects.filter(reference=reference).first():
         try:
-            order.add_article(article_id=article_id, quantity=quantity)
-        except ValueError:
-            raise HttpError(400, "Article out of stock")
+            order.update_article(article_id=article_id, quantity=quantity_change)
+        except ValueError as e:
+            raise HttpError(400, e.args[0])
         return 201
     raise HttpError(404, "Order not found")
 
 
-@router.get("order/view/{reference}", response=OrderSchema|int)
+@router.get("order/view/{reference}", response=OrderSchema | int)
 def order_details(request, order_id: int):
     if order := DetailedPurchaceOrder.aggregate_order(order_id):
         return order

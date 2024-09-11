@@ -48,3 +48,16 @@ docker volume prune --all
 docker network prune
 rm -rf data
 ```
+
+
+# Usage:
+- Start by adding some article categories, taxes will be applied on the category not the article itself, examples: Services, Basics, Cars...
+- Add taxes, Examples: (max, 0.57), (standard, 0.215), (reduced, 0.04)...
+- Assign taxes to categories, and setup validity dates:
+  - Displayed articles will show currently applicable tax
+  - Orders will calculate the tax depending on the Order creation date, so applicable tax should have been valid at the time or order creation, if the tax changed after the creation the new value will be ignored
+- Create new items:
+  - Items without a price or quantity cannot be added to orders
+  - Setting a non-existing category will create it
+- Create an order
+- Edit the order by adding or removing items using positive or negative quantity_change values.

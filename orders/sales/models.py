@@ -38,11 +38,17 @@ class PurchaceOrder(models.Model):
     def get_details(self) -> dict | None:
         return DetailedPurchaceOrder.aggregate_order(self.pk)
 
+    def update_article(self, article_id: int, quantity: int) -> None:
+        if quantity > 0:
+            self.add_article(article_id=article_id, quantity=quantity)
+        else:
+            self.remove_article(article_id=article_id, quantity=quantity)
+
     def add_article(self, article_id: int, quantity: int) -> None:
         """
-        1- check stock
-        2- add to order: update if existing
-        3- reduce stock
+        1- Check the stock
+        2- Add/Update order_article
+        3- update stock_article quantity
         """
         with transaction.atomic():
             if inventory_article := InventoryArticle.objects.filter(
@@ -57,7 +63,30 @@ class PurchaceOrder(models.Model):
                 inventory_article.quantity -= quantity
                 inventory_article.save()
             else:
-                raise ValueError("Out of stock")
+                raise ValueError("Article out of stock")
+
+    def remove_article(self, article_id: int, quantity: int) -> None:
+        """
+        1- Check order articles
+        2- Remove/Update order_article
+        3- Update stock_article quantity
+        """
+        with transaction.atomic():
+            if order_article := OrderArticle.objects.filter(
+                purchace_order=self, article_id=article_id, quantity=abs(quantity)
+            ).first():
+                order_article.delete()
+
+            elif order_article := OrderArticle.objects.filter(
+                purchace_order=self, article_id=article_id, quantity__gt=abs(quantity)
+            ).first():
+                order_article.quantity += quantity  # it is already negative
+                order_article.save()
+            else:
+                raise ValueError("Not enough articles in order to remove")
+            InventoryArticle.objects.filter(article_id=article_id).update(
+                quantity=F("quantity") - quantity  # adding a negative value
+            )
 
     def cancel_order(self):
         """for each OrderArticle in PurchaseOrder:
