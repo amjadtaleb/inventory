@@ -22,10 +22,14 @@ class PricedArticleRecent(models.Manager):
             .get_queryset()
             .extra(
                 where=[
-                    """(`inventory_pricedarticle`.`article_id`, `inventory_pricedarticle`.`set_at`) IN (
+                    """EXISTS (SELECT 1 FROM `inventory_pricedarticle` ts
+                    WHERE (
+                    `inventory_pricedarticle`.`article_id`, `inventory_pricedarticle`.`set_at`
+                    ) IN (
                         SELECT `article_id`, max(`set_at`)
                         FROM `inventory_pricedarticle`
-                        GROUP BY `article_id`)"""
+                        GROUP BY `article_id`)
+                    )"""
                 ]
             )
         )
