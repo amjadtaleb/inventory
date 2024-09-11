@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 
-from inventory.models import InventoryArticle, Category
+from inventory.models import InventoryArticle, Category, Article
 
 
 class Tax(models.Model):
@@ -11,6 +11,9 @@ class Tax(models.Model):
 
     reference = models.SlugField(primary_key=True)
     value = models.DecimalField(max_digits=3, decimal_places=3)
+
+    def __str__(self) -> str:
+        return f"Tax: {self.reference}@{self.value}"
 
 
 class CategoryTax(models.Model):
@@ -20,16 +23,22 @@ class CategoryTax(models.Model):
     tax = models.ForeignKey(Tax, on_delete=models.CASCADE)
     valid_from = models.DateTimeField()
 
+    def __str__(self) -> str:
+        return f"Category tax: {self.category.pk}@{self.tax.pk}"
+
 
 class PurchaceOrder(models.Model):
     reference = models.SlugField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
+    def __str__(self) -> str:
+        return f"PurchaceOrder: {self.reference} ({self.created_by.pk})"
+
     def get_details(self) -> dict | None:
         return DetailedPurchaceOrder.aggregate_order(self.pk)
 
-    def add_article(self, article_id, quantity):
+    def add_article(self, article_id: int, quantity: int) -> None:
         """
         1- check stock
         2- add to order: update if existing
@@ -58,9 +67,7 @@ class PurchaceOrder(models.Model):
         """
         with transaction.atomic():
             for order_article in self.articles.all():  # type: ignore Djano does not make easy for pylance to get related items
-                InventoryArticle.objects.filter(article=order_article.article.article).update(
-                    # too many articles? it's OrderArticle.InventoryArticle.Article
-                    # using article_id at anypoint might point to wrong PK
+                InventoryArticle.objects.filter(article=order_article.article).update(
                     quantity=F("quantity") + order_article.quantity
                 )
                 order_article.delete()
@@ -74,7 +81,7 @@ class OrderArticle(models.Model):
         related_name="articles",
         related_query_name="article",
     )
-    article = models.ForeignKey(InventoryArticle, on_delete=models.DO_NOTHING)
+    article = models.ForeignKey(Article, on_delete=models.DO_NOTHING)
     quantity = models.PositiveIntegerField()
 
 
@@ -104,7 +111,7 @@ class DetailedPurchaceOrder(models.Model):
     reference = models.SlugField()
     created_at = models.DateTimeField()
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
-    article = models.ForeignKey(InventoryArticle, on_delete=models.DO_NOTHING)
+    article = models.ForeignKey(Article, on_delete=models.DO_NOTHING)
     article_reference = models.SlugField()
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=28, decimal_places=2)

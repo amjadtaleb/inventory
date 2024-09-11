@@ -35,7 +35,7 @@ CREATE OR REPLACE VIEW `order_details` AS
         , `recent_taxes_at_order_time`.`value` AS `tax_value`
     FROM `sales_purchaceorder`
     JOIN `sales_orderarticle` ON (`sales_orderarticle`.`purchace_order_id` = `sales_purchaceorder`.`id`)
-    JOIN `inventory_pricedarticle` ON (`inventory_pricedarticle`.`id` = `sales_orderarticle`.`article_id`)
+    JOIN `inventory_pricedarticle` ON (`inventory_pricedarticle`.`article_id` = `sales_orderarticle`.`article_id`)
     JOIN `inventory_article` ON (`inventory_article`.`id` = `sales_orderarticle`.`article_id`)
     JOIN `recent_taxes_at_order_time` ON (
         `recent_taxes_at_order_time`.`category_id` = `inventory_article`.`category_id`

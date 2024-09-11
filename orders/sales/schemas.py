@@ -13,6 +13,12 @@ class CategoryTaxScheme(Schema):
     valid_from: date
 
 
+class OrderBasicSchema(Schema):
+    id: int
+    reference: str
+    created_at: datetime
+
+
 class OrderSchema(Schema):
     id: int
     reference: str

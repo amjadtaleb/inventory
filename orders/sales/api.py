@@ -4,9 +4,9 @@ from django.db.utils import IntegrityError
 
 from inventory.models import Category
 from .models import Tax, CategoryTax, PurchaceOrder, DetailedPurchaceOrder
-from .schemas import TaxSchema, CategoryTaxScheme, OrderSchema
+from .schemas import TaxSchema, CategoryTaxScheme, OrderSchema, OrderBasicSchema
 
-router = Router(tags=['Orders'])
+router = Router(tags=["Orders"])
 
 
 @router.get("/taxes", response=list[TaxSchema])
@@ -38,6 +38,11 @@ def assign_tax(request, data: Form[CategoryTaxScheme]):
     return 404
 
 
+@router.get("orders", response=list[OrderBasicSchema])
+def list_orders(request):
+    return PurchaceOrder.objects.all()
+
+
 @router.post("order/create")
 def create_order(request, reference: str):
     try:
@@ -61,7 +66,7 @@ def update_order(request, reference: str, article_id: int, quantity: int):
     return 404  # no such order
 
 
-@router.get("order/view/{reference}", response=OrderSchema)
+@router.get("order/view/{reference}", response=OrderSchema | int)
 def order_details(request, order_id: int):
     if order := DetailedPurchaceOrder.aggregate_order(order_id):
         return order

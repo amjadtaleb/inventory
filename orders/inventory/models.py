@@ -130,7 +130,7 @@ class InventoryAudit(models.Model):
 
 
 class FullArticle(models.Model):
-    """Base article model, unaware of prices or inventory status"""
+    """Readonly model, for articles with extra awareness of prices, taxes and inventory status"""
 
     class Meta:
         managed = False
@@ -139,9 +139,12 @@ class FullArticle(models.Model):
     article = models.ForeignKey(Article, primary_key=True, on_delete=models.DO_NOTHING)
     price = models.DecimalField(max_digits=28, decimal_places=2)
     set_at = models.DateTimeField()
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(help_text="This value could be null if the price was set but never entered the inventory")
     date_created = models.DateTimeField()
     reference = models.SlugField()
     name = models.SlugField()
     description = models.TextField()
     tax = models.DecimalField(max_digits=3, decimal_places=3)
+
+    def __str__(self) -> str:
+        return f"{self.reference}@{self.price}"
