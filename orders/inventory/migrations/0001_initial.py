@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date_created', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('reference', models.SlugField()),
+                ('reference', models.SlugField(unique=True)),
                 ('name', models.SlugField()),
                 ('description', models.TextField()),
             ],

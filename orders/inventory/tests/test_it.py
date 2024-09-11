@@ -1,12 +1,22 @@
 import pytest
 from django.db.models import ProtectedError
-from inventory.models import PricedArticle, InventoryAudit, InventoryArticle
+from django.db.utils import IntegrityError
+from inventory.models import PricedArticle, InventoryAudit, Article
 
 
 def test_priced_article_fk(article1, priced_article_old, priced_article_recent):
     """Verify fixtures setup"""
     assert priced_article_old.article.name == article1.name
     assert priced_article_recent.article.name == article1.name
+
+
+def test_article_unique_reference(article1):
+    with pytest.raises(IntegrityError, match=rf".*1062.*{article1.reference}.*"):
+        Article.objects.create(
+            reference=article1.reference,
+            description="",
+            name="name",
+        )
 
 
 def test_priced_article_are_created_in_order(priced_article_old, priced_article_recent):

@@ -1,16 +1,48 @@
 from django.db import models, transaction
+from .schemas import ArticleInput
 
 
 class Article(models.Model):
     """Base article model, unaware of prices or inventory status"""
 
     date_created = models.DateTimeField(auto_now_add=True, db_index=True)
-    reference = models.SlugField(db_index=True, allow_unicode=False)
+    reference = models.SlugField(db_index=True, allow_unicode=False, unique=True)
     name = models.SlugField(null=False)
     description = models.TextField()
 
     def __str__(self) -> str:
         return f"Article {self.reference}:{self.name}"
+
+    def update_related(self, data: ArticleInput):
+        if data.price is not None:
+            PricedArticle.objects.create(
+                article=self,
+                price=data.price,
+            )
+        if data.quantity is not None:
+            InventoryArticle.objects.update_or_create(
+                article=self,
+                defaults={"quantity": data.quantity},
+            )
+
+    def update_with_data(self, data: ArticleInput):
+        with transaction.atomic():
+            for i in "reference", "name", "description":
+                setattr(self, i, getattr(data, i))
+            self.save()
+            self.update_related(data)
+
+    @classmethod
+    def create_with_data(cls, data: ArticleInput):
+        with transaction.atomic():
+            article = cls.objects.create(
+                reference=data.reference,
+                name=data.name,
+                description=data.description,
+            )
+            article.save()
+            article.update_related(data)
+            return article
 
 
 class PricedArticleRecent(models.Manager):

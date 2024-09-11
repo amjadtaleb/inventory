@@ -1,10 +1,10 @@
 from typing import Optional
 from django.db.models import F
-from ninja import Router
+from ninja import Router, Form
 from ninja.errors import HttpError
 
-from .models import PricedArticle
-from .schemas import ArticleSchema
+from .models import PricedArticle, Article
+from .schemas import ArticleSchema, ArticleInput
 
 router = Router()
 
@@ -18,6 +18,21 @@ def list_articles(request, offset: int = 0, limit: Optional[int] = None):
         name=F("article__name"),
         description=F("article__description"),
     ).values()[slice(offset, limit)]
+
+
+@router.post("/article/update/{id}")
+def update_article(request, id: int, data: Form[ArticleInput]):
+    # should have been a put method, but it was causing errors
+    if article := Article.objects.filter(pk=id).first():
+        article.update_with_data(data=data)
+        return 201
+    raise HttpError(404, "Not found")
+
+
+@router.post("/article/create")
+def create_article(request, data: Form[ArticleInput]):
+    Article.create_with_data(data=data)
+    return 201
 
 
 @router.get("/article/{id}", response=ArticleSchema)
