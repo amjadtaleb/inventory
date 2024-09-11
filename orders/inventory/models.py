@@ -126,3 +126,21 @@ class InventoryAudit(models.Model):
 
     def __str__(self) -> str:
         return f"InventoryArticleLog {self.article_id}@{self.event_date}"  # type: ignore
+
+
+class FullArticle(models.Model):
+    """Base article model, unaware of prices or inventory status"""
+
+    class Meta:
+        managed = False
+        db_table = "taxed_article"
+
+    article = models.ForeignKey(Article, primary_key=True, on_delete=models.DO_NOTHING)
+    price = models.DecimalField(max_digits=28, decimal_places=2)
+    set_at = models.DateTimeField()
+    quantity = models.PositiveIntegerField()
+    date_created = models.DateTimeField()
+    reference = models.SlugField()
+    name = models.SlugField()
+    description = models.TextField()
+    tax = models.DecimalField(max_digits=3, decimal_places=3)

@@ -25,7 +25,7 @@ class ArticleSchema(Schema):
     price: Optional[float]
     date_priced: datetime = Field(..., alias="set_at")
     quantity: Optional[int]
-    category: str
+    tax: Optional[float]
 
 
 class ArticleInput(Schema):
