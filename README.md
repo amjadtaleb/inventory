@@ -24,6 +24,7 @@ docker-compose exec db mariadb centribal_orders_db \
 ```
 
 # Tests
+You can optionally run the tests in the application database or on a different container, in both cases you need to install the `requirements-test.txt`.
 
 ```sh
 docker run -d --rm --name test-mariadb \
@@ -37,6 +38,13 @@ wait a couple of seconds till the db is stable then run pytest, then stop down t
 
 ```sh
 docker stop test-mariadb
+```
+
+Running the tests can be done by either of
+```sh
+pytest
+# or
+docker-compose exec app ./manage.py pytest
 ```
 
 
