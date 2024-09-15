@@ -10,7 +10,7 @@ class Tax(models.Model):
     """Definition of taxes"""
 
     reference = models.SlugField(primary_key=True)
-    value = models.DecimalField(max_digits=3, decimal_places=3)
+    value = models.DecimalField(max_digits=6, decimal_places=3)
 
     def __str__(self) -> str:
         return f"Tax: {self.reference}@{self.value}"
@@ -144,7 +144,7 @@ class DetailedPurchaceOrder(models.Model):
     article_reference = models.SlugField()
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=28, decimal_places=2)
-    tax_value = models.DecimalField(max_digits=3, decimal_places=3)
+    tax_value = models.DecimalField(max_digits=6, decimal_places=3)
 
     @classmethod
     def aggregate_order(cls, order_id: int) -> dict | None:

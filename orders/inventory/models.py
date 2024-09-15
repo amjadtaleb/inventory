@@ -180,7 +180,7 @@ class FullArticle(models.Model):
     reference = models.SlugField()
     name = models.SlugField()
     description = models.TextField()
-    tax = models.DecimalField(max_digits=3, decimal_places=3)
+    tax = models.DecimalField(max_digits=6, decimal_places=3)
     category = models.SlugField()  # It is not worth it to make this a FK, we don't really want to traverse the ORM via this model, this is the whole point of the FullArticle model
 
     def __str__(self) -> str:
