@@ -5,21 +5,24 @@
 * API does not support authentication yet
 
 ```sh
-docker-compose up --build
+docker compose up --build -d --wait
 ```
+
+If you get `dependency failed to start: container centribal-mariadb-orders is unhealthy`, just run the command again, or run build then up.
+
 
 ## After first run
 
 ```sh
-docker-compose exec app ./manage.py migrate
-docker-compose exec app ./manage.py createsuperuser
+docker compose exec app ./manage.py migrate
+docker compose exec app ./manage.py createsuperuser
 ```
 
 ## Debugging
 
 ```sh
-docker-compose exec app ./manage.py shell_plus --print-sql
-docker-compose exec db mariadb centribal_orders_db \
+docker compose exec app ./manage.py shell_plus --print-sql
+docker compose exec db mariadb centribal_orders_db \
     --user=centribal --password=MYSQL_CENTRIBAL_PASSWORD
 ```
 
@@ -44,12 +47,13 @@ Running the tests can be done by either of
 ```sh
 pytest
 # or
-docker-compose exec app ./manage.py pytest
+docker compose exec app ./manage.py pytest
 ```
 
 
 # Cleanup
 ```sh
+docker compose down --remove-orphans
 docker rm -vf $(docker ps -aq)
 docker rmi -f $(docker images -aq)
 docker volume prune --all
