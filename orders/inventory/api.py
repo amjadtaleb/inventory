@@ -19,8 +19,7 @@ def list_categories(request):
 def create_category(request, category: Form[CategorySchema]):
     """Name will be converted to lower case"""
     try:
-        Category.objects.create(name=category.name.lower())
-        # silently change the name to lower case
+        Category.objects.create(name=category.name)
         return 201
     except IntegrityError:
         raise HttpError(400, "Duplicate")
@@ -34,8 +33,11 @@ def list_articles(request):
 
 @router.post("/article/create")
 def create_article(request, data: Form[ArticleCreateInput]):
-    Article.create_with_data(data=data)
-    return 201
+    try:
+        Article.create_with_data(data=data)
+        return 201
+    except ValueError as err:
+        raise HttpError(400, err.args[0])
 
 
 @router.put("/article/update/{id}")

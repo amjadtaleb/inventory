@@ -2,7 +2,6 @@ from enum import StrEnum
 
 from django.db import models, transaction
 from django.db.utils import IntegrityError
-from django.core.exceptions import ValidationError
 
 from .schemas import ArticleInput, ArticleCreateInput
 
@@ -12,13 +11,8 @@ class StockAction(StrEnum):
     remove = "remove"
 
 
-def validate_lower_case(value):
-    if not value.islower():
-        raise ValidationError("Value should be lowercase")
-
-
 class Category(models.Model):
-    name = models.SlugField(primary_key=True, allow_unicode=False, validators=[validate_lower_case])
+    name = models.SlugField(primary_key=True, allow_unicode=False)
     "examples: cars, books, basics, services"
 
     def __str__(self) -> str:
