@@ -24,6 +24,7 @@ CREATE OR REPLACE VIEW `taxed_article` AS
         , `inventory_article`.`name` AS `name`
         , `inventory_article`.`description` AS `description`
         , `recent_taxes`.`value` AS `tax`
+        , `recent_taxes`.`category_id` AS `category`
     FROM `inventory_pricedarticle`
     INNER JOIN `inventory_article`
         ON (`inventory_pricedarticle`.`article_id` = `inventory_article`.`id`)

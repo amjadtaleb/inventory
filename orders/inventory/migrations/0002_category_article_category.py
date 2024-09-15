@@ -2,6 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+import inventory.models
 
 
 class Migration(migrations.Migration):
@@ -14,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Category',
             fields=[
-                ('name', models.SlugField(primary_key=True, serialize=False)),
+                ('name', models.SlugField(primary_key=True, serialize=False, validators=[inventory.models.validate_lower_case])),
             ],
         ),
         migrations.AddField(

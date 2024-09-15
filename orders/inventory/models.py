@@ -1,10 +1,28 @@
+from enum import StrEnum
+
 from django.db import models, transaction
-from .schemas import ArticleInput
+from django.db.utils import IntegrityError
+from django.core.exceptions import ValidationError
+
+from .schemas import ArticleInput, ArticleCreateInput
+
+
+class StockAction(StrEnum):
+    add = "add"
+    remove = "remove"
+
+
+def validate_lower_case(value):
+    if not value.islower():
+        raise ValidationError("Value should be lowercase")
 
 
 class Category(models.Model):
-    name = models.SlugField(primary_key=True)
+    name = models.SlugField(primary_key=True, allow_unicode=False, validators=[validate_lower_case])
     "examples: cars, books, basics, services"
+
+    def __str__(self) -> str:
+        return f"Product Category: {self.name}"
 
 
 def set_default_category():
@@ -25,8 +43,8 @@ class Article(models.Model):
         return f"Article {self.reference}:{self.name}"
 
     def update_related(self, data: ArticleInput):
-        if data.category is not None:
-            category, created = Category.objects.get_or_create(name=data.category)
+        if data.category_name is not None:
+            category, created = Category.objects.get_or_create(name=data.category_name.lower())
             self.category = category
             self.save()
         if data.price is not None:
@@ -49,7 +67,7 @@ class Article(models.Model):
             self.update_related(data)
 
     @classmethod
-    def create_with_data(cls, data: ArticleInput):
+    def create_with_data(cls, data: ArticleCreateInput):
         with transaction.atomic():
             article = cls.objects.create(
                 reference=data.reference,
@@ -59,6 +77,24 @@ class Article(models.Model):
             article.save()
             article.update_related(data)
             return article
+
+    @classmethod
+    def update_stock(cls, article_id: int, action: StockAction, amount: int) -> int:
+        if not amount > 0:
+            raise ValueError("amount should be positive integer")
+        quantity = models.F("quantity")
+        if action == StockAction.add:
+            stock_update = quantity + amount
+        else:
+            stock_update = quantity - amount
+        return InventoryArticle.objects.filter(article_id=article_id).update(quantity=stock_update)
+
+    @classmethod
+    def update_price(cls, article_id: int, price: float):
+        try:
+            PricedArticle.objects.create(article_id=article_id, price=price)
+        except IntegrityError:
+            raise cls.DoesNotExist()
 
 
 class PricedArticleRecent(models.Manager):
@@ -111,11 +147,6 @@ class InventoryArticle(models.Model):
     def __str__(self) -> str:
         return f"InventoryArticle {self.article_id}:{self.quantity}"  # type: ignore
 
-    def save(self, *args, **kwargs) -> None:
-        with transaction.atomic():
-            super().save(*args, **kwargs)
-            InventoryAudit(article=self.article, new_state=self.quantity).save()
-
 
 class InventoryAudit(models.Model):
     """Keep track of all changes in inventory.
@@ -128,6 +159,9 @@ class InventoryAudit(models.Model):
     def __str__(self) -> str:
         return f"InventoryArticleLog {self.article_id}@{self.event_date}"  # type: ignore
 
+    def save(self, *args, **kwargs) -> None:
+        raise AttributeError("This table content is managed by a DB trigger")
+
 
 class FullArticle(models.Model):
     """Readonly model, for articles with extra awareness of prices, taxes and inventory status"""
@@ -136,15 +170,19 @@ class FullArticle(models.Model):
         managed = False
         db_table = "taxed_article"
 
-    article = models.ForeignKey(Article, primary_key=True, on_delete=models.DO_NOTHING)
+    article = models.OneToOneField(Article, primary_key=True, on_delete=models.DO_NOTHING)
     price = models.DecimalField(max_digits=28, decimal_places=2)
     set_at = models.DateTimeField()
-    quantity = models.PositiveIntegerField(help_text="This value could be null if the price was set but never entered the inventory")
+    quantity = models.PositiveIntegerField(
+        help_text="This value could be null if the price was set but never entered the inventory"
+    )
     date_created = models.DateTimeField()
     reference = models.SlugField()
     name = models.SlugField()
     description = models.TextField()
     tax = models.DecimalField(max_digits=3, decimal_places=3)
+    category = models.SlugField()  # It is not worth it to make this a FK, we don't really want to traverse the ORM via this model, this is the whole point of the FullArticle model
 
     def __str__(self) -> str:
-        return f"{self.reference}@{self.price}"
+        the_tax = f"+{self.tax * 100:.2f}%" if self.tax else ""
+        return f"{self.reference}(@{self.price}{the_tax})"
