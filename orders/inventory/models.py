@@ -3,7 +3,6 @@ from enum import StrEnum
 from django.db import models, transaction
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
-from django.db.models.functions import Lower
 
 from .schemas import ArticleInput, ArticleCreateInput
 
