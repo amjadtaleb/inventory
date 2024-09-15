@@ -40,11 +40,12 @@ class PurchaceOrder(models.Model):
 
     def update_article(self, article_id: int, quantity: int) -> None:
         if quantity > 0:
-            self.add_article(article_id=article_id, quantity=quantity)
-        else:
-            self.remove_article(article_id=article_id, quantity=quantity)
+            self._add_article(article_id=article_id, quantity=quantity)
+        elif quantity < 0:
+            self._remove_article(article_id=article_id, quantity=-quantity)
+        # do nothing if quantity is 0
 
-    def add_article(self, article_id: int, quantity: int) -> None:
+    def _add_article(self, article_id: int, quantity: int) -> None:
         """
         1- Check the stock
         2- Add/Update order_article
@@ -65,7 +66,7 @@ class PurchaceOrder(models.Model):
             else:
                 raise ValueError("Article out of stock")
 
-    def remove_article(self, article_id: int, quantity: int) -> None:
+    def _remove_article(self, article_id: int, quantity: int) -> None:
         """
         1- Check order articles
         2- Remove/Update order_article
@@ -73,19 +74,20 @@ class PurchaceOrder(models.Model):
         """
         with transaction.atomic():
             if order_article := OrderArticle.objects.filter(
-                purchace_order=self, article_id=article_id, quantity=abs(quantity)
+                purchace_order=self, article_id=article_id, quantity=quantity
             ).first():
                 order_article.delete()
 
             elif order_article := OrderArticle.objects.filter(
-                purchace_order=self, article_id=article_id, quantity__gt=abs(quantity)
+                purchace_order=self, article_id=article_id, quantity__gt=quantity
             ).first():
-                order_article.quantity += quantity  # it is already negative
+                order_article.quantity -= quantity
                 order_article.save()
             else:
                 raise ValueError("Not enough articles in order to remove")
+
             InventoryArticle.objects.filter(article_id=article_id).update(
-                quantity=F("quantity") - quantity  # adding a negative value
+                quantity=F("quantity") + quantity
             )
 
     def cancel_order(self):
@@ -153,7 +155,7 @@ class DetailedPurchaceOrder(models.Model):
             .annotate(
                 articles=JSON_ObjectAgg("article_reference", "quantity"),
                 total_pre_tax=models.aggregates.Sum(F("price") * F("quantity")),
-                total_texed=models.aggregates.Sum((F("price") + F("price") * F("tax_value")) * F("quantity")),
+                total_taxed=models.aggregates.Sum((F("price") + F("price") * F("tax_value")) * F("quantity")),
             )
             .values(
                 "id",
@@ -162,7 +164,7 @@ class DetailedPurchaceOrder(models.Model):
                 "created_by_id",
                 "articles",
                 "total_pre_tax",
-                "total_texed",
+                "total_taxed",
             )
             .first()
         )

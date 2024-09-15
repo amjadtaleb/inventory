@@ -76,7 +76,7 @@ def update_order(request, reference: str, article_id: int, quantity_change: int)
     raise HttpError(404, "Order not found")
 
 
-@router.get("order/view/{reference}", response=OrderSchema | int)
+@router.get("order/view/{reference}", response=OrderSchema)
 def order_details(request, order_id: int):
     if order := DetailedPurchaceOrder.aggregate_order(order_id):
         return order

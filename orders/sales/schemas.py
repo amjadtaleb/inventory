@@ -26,4 +26,4 @@ class OrderSchema(Schema):
     created_by_id: int
     articles: dict[str, int]  # TODO: find a better way to display this in the api docs
     total_pre_tax: float
-    total_texed: float
+    total_taxed: float
