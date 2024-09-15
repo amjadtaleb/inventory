@@ -3,6 +3,7 @@ from enum import StrEnum
 from django.db import models, transaction
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Lower
 
 from .schemas import ArticleInput, ArticleCreateInput
 
@@ -68,15 +69,21 @@ class Article(models.Model):
 
     @classmethod
     def create_with_data(cls, data: ArticleCreateInput):
-        with transaction.atomic():
-            article = cls.objects.create(
-                reference=data.reference,
-                name=data.name,
-                description=data.description,
-            )
-            article.save()
-            article.update_related(data)
-            return article
+        try:
+            with transaction.atomic():
+                article = cls.objects.create(
+                    reference=data.reference,
+                    name=data.name,
+                    description=data.description,
+                )
+                article.save()
+                article.update_related(data)
+                return article
+        except IntegrityError as e:
+            if e.__cause__.args[0] == 1062:
+                if "'reference'" in e.__cause__.args[1]:
+                    raise ValueError(f"Deplicate reference: {data.reference}")
+            raise e
 
     @classmethod
     def update_stock(cls, article_id: int, action: StockAction, amount: int) -> int:
