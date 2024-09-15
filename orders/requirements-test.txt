@@ -4,3 +4,4 @@ pytest
 pytest-django
 factory-boy
 pytest_factoryboy
+faker
