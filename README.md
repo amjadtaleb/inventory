@@ -1,3 +1,7 @@
+Django project example using [Django Ninja](https://django-ninja.dev/)
+
+
+
 # Build and run
 ## Notes:
 * Add sudo before each docker command on linux
