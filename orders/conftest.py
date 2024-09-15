@@ -7,6 +7,7 @@ Inventory:
 Sales:
     - Tax:
     - CategoryTax: multiple assignments
+    - PurchaceOrder: multiple creation dates
 """
 
 from django.utils.timezone import datetime, timedelta, make_aware
@@ -14,12 +15,12 @@ import pytest
 from pytest_factoryboy import register
 
 from inventory.models import Category, Article, PricedArticle, InventoryArticle
-from sales.models import Tax, CategoryTax
+from sales.models import Tax, CategoryTax, PurchaceOrder
 
 from inventory.tests.factories import CategoryFactory, ArticleFactory, PricedArticleFactory, InventoryArticleFactory
-from sales.tests.factories import TaxFactory, CategoryTaxFactory
+from sales.tests.factories import TaxFactory, CategoryTaxFactory, PurchaceOrderFactory, UserFactory
 
-
+# Inventory
 register(CategoryFactory)
 register(ArticleFactory)
 register(PricedArticleFactory)
@@ -27,8 +28,13 @@ register(InventoryArticleFactory)
 # Sales
 register(TaxFactory)
 register(CategoryTaxFactory)
+register(PurchaceOrderFactory)
+register(UserFactory)
 
 
+######################
+### Inventory
+######################
 @pytest.fixture(autouse=True)
 def product_category(db, category_factory: CategoryFactory) -> Category:
     category = category_factory.create()
@@ -114,3 +120,22 @@ def taxed_category_future(
         tax=tax_0_0,
         valid_from=make_aware(datetime.fromisoformat("2040-01-01")),
     )
+
+
+@pytest.fixture
+def user(db, user_factory: UserFactory):
+    return user_factory.create()
+
+
+@pytest.fixture
+def purchace_order_recent(db, user, purchace_order_factory: PurchaceOrderFactory) -> PurchaceOrder:
+    return purchace_order_factory.create(created_by=user)
+
+
+@pytest.fixture
+def purchace_order_old(db, user, purchace_order_factory: PurchaceOrderFactory) -> PurchaceOrder:
+    po = purchace_order_factory.create(created_by=user)
+    # overwrite django's auto_now_add
+    po.created_at = datetime.fromisoformat("1996-01-01")  # before the active tax became valid
+    po.save()
+    return po

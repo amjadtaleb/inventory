@@ -2,7 +2,7 @@ import factory
 from faker import Faker
 
 from django.contrib.auth import get_user_model
-from sales.models import Tax, CategoryTax
+from sales.models import Tax, CategoryTax, PurchaceOrder
 from inventory.tests.factories import CategoryFactory
 
 fakes = Faker()
@@ -30,3 +30,11 @@ class CategoryTaxFactory(factory.django.DjangoModelFactory):
 
     category = factory.SubFactory(CategoryFactory)
     tax = factory.SubFactory(TaxFactory)
+
+
+class PurchaceOrderFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = PurchaceOrder
+
+    reference = fakes.slug()
+    created_by = factory.SubFactory(UserFactory)
