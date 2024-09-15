@@ -12,6 +12,7 @@ CREATE OR REPLACE VIEW `taxed_article` AS
         WHERE (`category_id`, `valid_from`) IN (
             SELECT `category_id`, MAX(`valid_from`)
             FROM `sales_categorytax`
+            WHERE `valid_from` <= CURRENT_TIMESTAMP
             GROUP BY `category_id`
         )
     ) SELECT
